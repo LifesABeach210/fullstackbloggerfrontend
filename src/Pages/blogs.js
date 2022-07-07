@@ -1,16 +1,19 @@
 import React from 'react'
 
 const BlogsPage = (props) => {
+  
+  console.log(props);
   return (
     <div className="blogs-page">
       <h1>Blogs Page</h1>
-      <p>Server Message: {props.message.map((blogs)=>{
+       {props.blogs.map((blog)=>{
         return (
-          <>
-            {blogs.title}
-          </>
+        <div key={blog._id}>
+          <h2>{blog.title}</h2>
+          <p>{blog.lastModified}</p>
+         </div>
         )
-      })}</p>
+      })}
     </div>
   )
 }

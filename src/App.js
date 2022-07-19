@@ -1,37 +1,129 @@
-import './App.css';
-import { useState,useEffect } from 'react';
-import BlogsPage from './Pages/blogs';
+import "./App.css";
+import { Route, Routes } from "react-router-dom";
+import BlogsPage from "./Pages/blogs";
+import { useState } from "react";
+import { useEffect } from "react";
+import PostBlogPage from "./Pages/PostBlogPage";
+import BlogManager from "./Pages/BlogManager";
 
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-} from "react-router-dom";
-
-const urlEndpoint =
-  "http://localhost:4000";
+const urlEndpoint = "http://localhost:4000";
 
 function App() {
-  const [serverJSON,setServerJSON] = useState([]);
-  
+  const [serverJSON, setServerJSON] = useState({ message: [] });
+  const [sortField, setSortField] = useState("id");
+  const [sortOrder, setSortOrder] = useState("DESC");
+  const [filterField, setFilterField] = useState("title");
+  const [filterValue, setFilterValue] = useState("");
+  const [isFetching, setIsFetching] = useState(false);
+  const [adminBlogList, setAdminBlogList] = useState({ message: [] });
+  const [adminBlogsLoading, setAdminBlogsLoading] = useState(false);
+
+  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(1);
+
+  const blogSubmit = async (blog) => {
+    const url = `${urlEndpoint}/blogs/blog-submit`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(blog),
+    });
+
+    const responseJSON = await response.json();
+    return responseJSON;
+  };
+
+  const deleteBlog = async (blogId) => {
+    setAdminBlogsLoading(true);
+    const url = `${urlEndpoint}/admin/delete-blog${blogId}`;
+    const pleaseRespond = await fetch(url, {
+      method: "DELETE",
+    });
+    const responseJSON = await pleaseRespond.json();
+    setAdminBlogsLoading(false);//check this out
+  };
+
+  const fetchSingleBlog = async (blogId) => {
+    const url = `${urlEndpoint}/blogs/single-blog/${blogId}`
+    const response = await fetch(url);
+    const responseJSON = await response.json();
+    return responseJSON.message;
+  }
+
+
+  useEffect(() => {
+    const getAdminBlogList = async () => {
+      const pleaseResond = await fetch(`${urlEndpoint}/admin/blog-list`);
+      const responseAdmin = pleaseResond.json();
+      setAdminBlogList(responseAdmin);
+      return responseAdmin;
+    };
+    getAdminBlogList();
+  }, [adminBlogsLoading]);
+
+  // code to copy and add in
   useEffect(() => {
     const fetchData = async () => {
-      const url = `${urlEndpoint}/blogs/all-blogs`
+      const url = `${urlEndpoint}/blogs/all-blogs?sortField=${sortField}&sortOrder=${sortOrder}&filterField=${filterField}&filterValue=${filterValue}&limit=${limit}&page=${page}`;
       const apiResponse = await fetch(url);
       const apiJSON = await apiResponse.json();
-      console.log(apiJSON);
-      setServerJSON(apiJSON);
+      setServerJSON({ message: apiJSON });
+      console.log("url", url);
       return;
     };
     fetchData();
-  }, []); 
+  }, [sortField, sortOrder, filterField, filterValue, limit, page, isFetching]);
+
   return (
     <div className="App">
-  <Routes>
-    <Route path='/blogs'element={<BlogsPage blogs={serverJSON}/>}></Route>
-  </Routes> 
+      <Routes>
+        <Route
+          index
+          element={
+            <BlogsPage
+              blogs={serverJSON.message}
+              sortField={sortField}
+              setSortField={setSortField}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              filterField={filterField}
+              setFilterField={setFilterField}
+              filterValue={filterValue}
+              setFilterValue={setFilterValue}
+              limit={limit}
+              setLimit={setLimit}
+              page={page}
+              setPage={setPage}
+            />
+          }
+        ></Route>
+        <Route
+          path="/post-blog"
+          element={
+            <PostBlogPage
+              blogSubmit={blogSubmit}
+              setIsFetching={setIsFetching}
+            />
+          }
+        ></Route>
+
+        <Route
+          path="/blog-manager"
+          element={
+            <BlogManager
+              adminBlogList={adminBlogList.message}
+              deleteBlog={deleteBlog}
+              fetchSingleBlog={fetchSingleBlog}
+              setAdminBlogsLoading={setAdminBlogsLoading}
+              urlEndpoint={urlEndpoint}
+
+              />
+          }
+        ></Route>
+      </Routes>
     </div>
   );
 }
-
 export default App;
